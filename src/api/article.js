@@ -35,3 +35,7 @@ export function getArticleFavorites(id, params) {
 export function getArticleViews(id) {
   return request.get(`/articles/${id}/views`)
 }
+
+export function exportArticles(articleIds) {
+  return request.post('/articles/export', { article_ids: articleIds }, { responseType: 'blob' })
+}

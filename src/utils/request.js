@@ -25,6 +25,11 @@ request.interceptors.request.use(
 // Response interceptor
 request.interceptors.response.use(
   response => {
+    // 如果是blob类型的响应（如文件下载），直接返回整个response
+    if (response.config.responseType === 'blob') {
+      return response
+    }
+
     const res = response.data
     if (res.code !== 0) {
       ElMessage.error(res.message || '请求失败')

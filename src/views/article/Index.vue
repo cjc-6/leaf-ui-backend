@@ -6,6 +6,7 @@
           <span>文章列表</span>
           <div class="header-actions">
             <el-button type="success" @click="importDialogVisible = true">批量导入</el-button>
+            <el-button type="warning" @click="handleExportAll">导出全部</el-button>
             <el-button type="primary" @click="$router.push('/articles/create')">新增文章</el-button>
           </div>
         </div>
@@ -38,6 +39,9 @@
           </el-button>
           <el-button size="small" type="primary" @click="batchUpdateDialogVisible = true" style="margin-left: 10px">
             批量更新
+          </el-button>
+          <el-button size="small" type="info" @click="handleExportSelected" style="margin-left: 10px">
+            导出选中
           </el-button>
           <el-button size="small" type="danger" @click="handleBatchDelete" style="margin-left: 10px">
             批量删除
@@ -252,7 +256,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { getArticles, updateArticleStatus, deleteArticle } from '@/api/article'
+import { getArticles, updateArticleStatus, deleteArticle, exportArticles } from '@/api/article'
 import { getFiles } from '@/api/file'
 import { getCategories, getTags } from '@/api/taxonomy'
 import { getChapters } from '@/api/chapter'
@@ -610,6 +614,60 @@ const handleBatchOffline = async () => {
     if (error !== 'cancel') {
       ElMessage.error(error.response?.data?.message || '批量下架失败')
     }
+  }
+}
+
+const handleExportSelected = async () => {
+  if (selectedArticles.value.length === 0) {
+    ElMessage.warning('请先选择要导出的文章')
+    return
+  }
+
+  try {
+    const articleIds = selectedArticles.value.map(a => a.id)
+    await handleExport(articleIds, `selected-articles-${new Date().getTime()}.zip`)
+  } catch (error) {
+    ElMessage.error('导出失败: ' + (error.message || '未知错误'))
+  }
+}
+
+const handleExportAll = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要导出所有已发布的文章吗？',
+      '导出确认',
+      {
+        type: 'info',
+        confirmButtonText: '确定导出',
+        cancelButtonText: '取消'
+      }
+    )
+    await handleExport([], `all-articles-${new Date().getTime()}.zip`)
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('导出失败: ' + (error.message || '未知错误'))
+    }
+  }
+}
+
+const handleExport = async (articleIds, filename) => {
+  try {
+    const response = await exportArticles(articleIds)
+
+    // 创建blob URL并下载
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.parentNode.removeChild(link)
+    window.URL.revokeObjectURL(url)
+
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出错误:', error)
+    throw error
   }
 }
 
