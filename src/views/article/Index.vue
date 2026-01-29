@@ -14,13 +14,23 @@
 
       <el-form inline class="search-form">
         <el-form-item>
-          <el-input v-model="searchParams.keyword" placeholder="搜索标题" clearable />
+          <el-input v-model="searchParams.keyword" placeholder="搜索标题" clearable style="width: 200px" />
         </el-form-item>
         <el-form-item>
-          <el-select v-model="searchParams.status" placeholder="状态" clearable>
+          <el-select v-model="searchParams.status" placeholder="状态" clearable style="width: 120px">
             <el-option label="草稿" value="0" />
             <el-option label="已发布" value="1" />
             <el-option label="已下架" value="2" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-select v-model="searchParams.chapter_id" placeholder="章节" clearable style="width: 180px">
+            <el-option
+              v-for="chapter in chapters"
+              :key="chapter.id"
+              :label="chapter.name"
+              :value="chapter.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -294,7 +304,8 @@ const statusMap = {
 
 const searchParams = reactive({
   keyword: '',
-  status: ''
+  status: '',
+  chapter_id: ''
 })
 
 const pagination = reactive({
@@ -312,9 +323,13 @@ const fetchArticles = async () => {
   try {
     const params = {
       page: pagination.page,
-      page_size: pagination.limit,  // 改为 page_size
-      ...searchParams
+      page_size: pagination.limit
     }
+    // 只添加有值的参数
+    if (searchParams.keyword) params.keyword = searchParams.keyword
+    if (searchParams.status) params.status = searchParams.status
+    if (searchParams.chapter_id) params.chapter_id = String(searchParams.chapter_id)
+
     console.log('请求参数:', params)
     const res = await getArticles(params)
     console.log('响应数据:', res)
